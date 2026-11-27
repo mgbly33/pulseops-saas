@@ -1,0 +1,223 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  name         String
+  avatarUrl    String?
+  memberships  Membership[]
+  auditLogs    AuditLog[]
+  createdAt    DateTime     @default(now())
+}
+
+model Workspace {
+  id               String            @id @default(cuid())
+  name             String
+  slug             String            @unique
+  currency         String            @default("CNY") // CNY | USD
+  memberships      Membership[]
+  customers        Customer[]
+  orders           Order[]
+  funnelStats      FunnelStat[]
+  alertRules       AlertRule[]
+  alertEvents      AlertEvent[]
+  auditLogs        AuditLog[]
+  playbooks        Playbook[]
+  playbookRuns     PlaybookRun[]
+  savedReports     SavedReport[]
+  webhookEndpoints WebhookEndpoint[]
+  createdAt        DateTime          @default(now())
+}
+
+model Membership {
+  id          String    @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        String    @default("ANALYST") // OWNER | ADMIN | ANALYST
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId])
+}
+
+model Customer {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  companyName String
+  contactName String
+  email       String
+  planTier    String    // STARTER | PRO | ENTERPRISE
+  channel     String    // ORGANIC | PAID_SEARCH | SOCIAL | PARTNER
+  healthScore Int       @default(85) // 0-100
+  status      String    @default("ACTIVE") // ACTIVE | AT_RISK | CHURNED
+  ltv         Float     @default(0)
+  tagsJson    String    @default("[]")
+  lastLoginAt DateTime  @default(now())
+  orders      Order[]
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, planTier])
+  @@index([workspaceId, createdAt])
+}
+
+model Order {
+  id          String    @id @default(cuid())
+  orderCode   String    @unique
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  customerId  String
+  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  amount      Float
+  status      String    // PAID | PENDING | REFUNDED | FAILED
+  channel     String    // ORGANIC | PAID_SEARCH | SOCIAL | PARTNER
+  planTier    String    // STARTER | PRO | ENTERPRISE
+  note        String?
+  invoiced    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, status])
+  @@index([workspaceId, channel])
+  @@index([customerId])
+}
+
+model FunnelStat {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  date        DateTime
+  channel     String    // ORGANIC | PAID_SEARCH | SOCIAL | PARTNER
+  visitors    Int
+  signups     Int
+  trials      Int
+  paidUsers   Int
+
+  @@index([workspaceId, date])
+  @@index([workspaceId, channel, date])
+}
+
+model AlertRule {
+  id          String       @id @default(cuid())
+  workspaceId String
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  metric      String       // DAILY_REVENUE | REFUND_RATE | CONVERSION_RATE
+  operator    String       // LT | GT
+  threshold   Float
+  severity    String       // INFO | WARNING | CRITICAL
+  enabled     Boolean      @default(true)
+  events      AlertEvent[]
+  createdAt   DateTime     @default(now())
+
+  @@index([workspaceId])
+}
+
+model AlertEvent {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  ruleId      String
+  rule        AlertRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  actualValue Float
+  message     String
+  resolved    Boolean   @default(false)
+  triggeredAt DateTime  @default(now())
+
+  @@index([workspaceId, resolved])
+  @@index([workspaceId, triggeredAt])
+}
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String
+  targetType  String
+  targetId    String
+  detailJson  String
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId, createdAt])
+}
+
+model Playbook {
+  id          String        @id @default(cuid())
+  workspaceId String
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  description String
+  triggerType String        // AT_RISK_HIGH_LTV | EXPANSION_READY | UNINVOICED_PAID | HIGH_REFUND_RISK
+  actionType  String        // TAG_VIP_RESCUE | FLAG_UPSELL | AUTO_INVOICE | DISPATCH_DIGEST
+  configJson  String        @default("{}")
+  enabled     Boolean       @default(true)
+  lastRunAt   DateTime?
+  runs        PlaybookRun[]
+  createdAt   DateTime      @default(now())
+
+  @@index([workspaceId])
+}
+
+model PlaybookRun {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  playbookId   String
+  playbook     Playbook  @relation(fields: [playbookId], references: [id], onDelete: Cascade)
+  status       String    @default("SUCCESS") // SUCCESS | NO_MATCH | FAILED
+  matchedCount Int       @default(0)
+  affectedJson String    @default("[]")
+  summary      String
+  durationMs   Int       @default(12)
+  executedAt   DateTime  @default(now())
+
+  @@index([workspaceId, executedAt])
+  @@index([playbookId])
+}
+
+model SavedReport {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  description String    @default("")
+  dataset     String    // ORDERS | CUSTOMERS | FUNNEL
+  dimension   String    // channel | planTier | status | month
+  metric      String    // SUM_REVENUE | COUNT | AVG_AMOUNT | AVG_HEALTH | PAID_USERS
+  chartType   String    @default("BAR") // BAR | AREA | PIE | TABLE
+  range       String    @default("90d") // 7d | 30d | 90d | 12m
+  pinned      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+}
+
+model WebhookEndpoint {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name            String
+  url             String
+  secret          String
+  eventsJson      String    @default("[]")
+  enabled         Boolean   @default(true)
+  deliveryCount   Int       @default(0)
+  lastStatus      Int?
+  lastDeliveredAt DateTime?
+  lastPayloadJson String?
+  createdAt       DateTime  @default(now())
+
+  @@index([workspaceId])
+}

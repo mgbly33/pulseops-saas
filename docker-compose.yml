@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pulseops-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pulseops}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pulseops_local_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-pulseops}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pulseops_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pulseops -d pulseops"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: pulseops-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      HOST: 0.0.0.0
+      JWT_SECRET: ${JWT_SECRET:-pulseops-prod-jwt-secret-change-me}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-pulseops}:${POSTGRES_PASSWORD:-pulseops_local_dev}@postgres:5432/${POSTGRES_DB:-pulseops}?schema=public
+      CORS_ORIGIN: http://localhost:8080,http://localhost:5173
+    ports:
+      - "4000:4000"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: pulseops-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  pulseops_pgdata:

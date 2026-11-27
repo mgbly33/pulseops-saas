@@ -1,0 +1,7 @@
+# PulseOps SaaS Rules
+- Keep all code, deps, DB, and configs strictly inside projects/pulseops-saas/.
+- Enforce workspace isolation (X-Workspace-Id) and RBAC (OWNER/ADMIN/ANALYST) on every business route.
+- ANALYST is read-only (403 on write operations).
+- Never hardcode mock data in apps/web; always fetch from apps/api.
+- Always apply tabular-nums to financial numbers, percentages, and data tables.
+- Maintain complete ZH/EN i18n and Light/Dark theme parity.

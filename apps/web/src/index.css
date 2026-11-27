@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  html {
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-[#F7F8FA] text-slate-900 antialiased selection:bg-indigo-500/20 selection:text-indigo-700 dark:bg-[#09090B] dark:text-zinc-100 dark:selection:bg-indigo-500/30 dark:selection:text-indigo-200;
+  }
+
+  select option {
+    @apply bg-white text-slate-900 dark:bg-[#18181D] dark:text-zinc-100;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Elevated Linear / Stripe surface system */
+.surface-card {
+  @apply rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_2px_8px_rgba(15,23,42,0.02)] transition-all duration-200 dark:border-white/[0.07] dark:bg-[#111114] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_4px_20px_rgba(0,0,0,0.35)];
+}
+
+.surface-card-interactive {
+  @apply surface-card hover:border-indigo-300/80 hover:shadow-[0_4px_16px_rgba(79,70,229,0.08)] dark:hover:border-indigo-500/35 dark:hover:bg-[#141419];
+}
+
+.glass-header {
+  @apply border-b border-slate-200/75 bg-white/80 backdrop-blur-xl dark:border-white/[0.07] dark:bg-[#0C0C0F]/80;
+}
+
+.input-field {
+  @apply h-9 rounded-xl border border-slate-200/90 bg-white px-3 text-sm text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,0.03)] placeholder:text-slate-400 transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/15 dark:border-white/[0.09] dark:bg-[#16161B] dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-indigo-400 dark:focus:ring-indigo-400/20;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#5B52F0] to-[#4F46E5] px-3.5 py-2 text-sm font-medium text-white shadow-[0_1px_2px_rgba(79,70,229,0.35),inset_0_1px_0_rgba(255,255,255,0.18)] transition-all hover:from-[#5248EC] hover:to-[#4338CA] active:scale-[0.985] focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:cursor-not-allowed disabled:opacity-45;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200/90 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all hover:border-slate-300 hover:bg-slate-50 active:scale-[0.985] focus:outline-none focus:ring-2 focus:ring-indigo-500/15 disabled:cursor-not-allowed disabled:opacity-45 dark:border-white/[0.09] dark:bg-[#18181D] dark:text-zinc-200 dark:hover:border-white/[0.16] dark:hover:bg-[#1F1F26];
+}
+
+.btn-danger {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-sm font-medium text-rose-700 transition-all hover:bg-rose-100 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-45 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20;
+}
+
+/* Custom sleek range slider for What-If simulator */
+input[type='range'].pulse-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  @apply h-1.5 w-full cursor-pointer rounded-full bg-slate-200 dark:bg-white/10;
+}
+input[type='range'].pulse-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  @apply h-4 w-4 rounded-full border-2 border-white bg-[#4F46E5] shadow-md transition hover:scale-110 dark:border-[#111114];
+}
+
+/* Ambient architectural canvas mesh */
+.canvas-mesh {
+  background-image:
+    radial-gradient(at 14% 0%, rgba(99, 102, 241, 0.065) 0px, transparent 42%),
+    radial-gradient(at 88% 4%, rgba(16, 185, 129, 0.045) 0px, transparent 36%);
+}
+
+.dark .canvas-mesh {
+  background-image:
+    radial-gradient(at 14% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 46%),
+    radial-gradient(at 86% 4%, rgba(16, 185, 129, 0.07) 0px, transparent 38%);
+}
+
+/* Subtle slim scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-slate-300/70 dark:bg-zinc-700/70;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-zinc-600;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only-container {
+    position: static !important;
+    inset: auto !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
