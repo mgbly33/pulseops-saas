@@ -25,14 +25,15 @@ interface AuthResponse {
 }
 
 export function LoginPage() {
+  const publicShowcase = import.meta.env.VITE_PUBLIC_SHOWCASE === 'true';
   const { t } = useTranslation();
   const navigate = useNavigate();
   const setSession = useAuthStore((s) => s.setSession);
   const { theme, toggleTheme, lang, toggleLang } = useUiStore();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [email, setEmail] = useState('owner@pulseops.io');
-  const [password, setPassword] = useState('PulseOwner2026!');
+  const [email, setEmail] = useState(publicShowcase ? 'analyst@pulseops.io' : 'owner@pulseops.io');
+  const [password, setPassword] = useState(publicShowcase ? 'PulseView2026!' : 'PulseOwner2026!');
   const [name, setName] = useState('');
   const [workspaceName, setWorkspaceName] = useState('');
   const [currency, setCurrency] = useState<'CNY' | 'USD'>('CNY');
@@ -238,7 +239,7 @@ export function LoginPage() {
             <p className="text-xs text-slate-500 dark:text-slate-400">{t('auth.quickDemoDesc')}</p>
 
             <div className="grid grid-cols-1 gap-2 pt-1">
-              <button
+              {!publicShowcase && <button
                 type="button"
                 disabled={loading !== null}
                 onClick={() => performLogin('owner@pulseops.io', 'PulseOwner2026!', 'owner')}
@@ -260,7 +261,7 @@ export function LoginPage() {
                 ) : (
                   <ArrowRight className="h-4 w-4 shrink-0 text-indigo-500 transition group-hover:translate-x-0.5" />
                 )}
-              </button>
+              </button>}
 
               <button
                 type="button"

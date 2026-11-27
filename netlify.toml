@@ -1,0 +1,33 @@
+[build]
+  command = "npm run db:netlify -w apps/api && npm run build"
+  publish = "apps/web/dist"
+  functions = "apps/api/netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "22"
+  VITE_PUBLIC_SHOWCASE = "true"
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["fastify", "@fastify/swagger", "@fastify/swagger-ui", "@prisma/client"]
+  included_files = [
+    "!node_modules/typescript/**",
+    "!node_modules/@prisma/client/runtime/*wasm*",
+    "!node_modules/.prisma/client/*.dll.node",
+    "!node_modules/.prisma/client/*debian*.node",
+    "!node_modules/.prisma/client/*.wasm",
+  ]
+
+[database.migrations]
+  path = "netlify/database/migrations"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/backend/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -95,30 +96,46 @@ function addMonthsClamped(date: Date, months: number, maxDate: Date, rng: () => 
   return d;
 }
 
-export async function seedDatabase(client: PrismaClient = prisma) {
+export async function seedDatabase(db: PrismaClient = prisma) {
+  if (!process.env.NETLIFY_DB_URL) return populate(db, false);
+  await db.$transaction(async (tx) => {
+    const tables = Prisma.dmmf.datamodel.models.map(model => Prisma.raw(`"${model.dbName ?? model.name}"`));
+    await tx.$executeRaw`LOCK TABLE ${Prisma.join(tables)} IN EXCLUSIVE MODE`;
+    for (const table of tables) {
+      const rows = await tx.$queryRaw<{ populated: boolean }[]>`SELECT EXISTS (SELECT FROM ${table}) AS populated`;
+      if (rows[0].populated) throw new Error('Showcase initialization requires an empty database.');
+    }
+    await populate(tx, true);
+  }, { timeout: 600000 });
+}
+
+async function populate(client: Prisma.TransactionClient, showcase: boolean) {
   const rng = createRng(20260415);
   const now = new Date();
   now.setMinutes(0, 0, 0);
 
-  // Clean slate for deterministic re-seeding
-  await client.webhookEndpoint.deleteMany();
-  await client.savedReport.deleteMany();
-  await client.playbookRun.deleteMany();
-  await client.playbook.deleteMany();
-  await client.auditLog.deleteMany();
-  await client.alertEvent.deleteMany();
-  await client.alertRule.deleteMany();
-  await client.funnelStat.deleteMany();
-  await client.order.deleteMany();
-  await client.customer.deleteMany();
-  await client.membership.deleteMany();
-  await client.workspace.deleteMany();
-  await client.user.deleteMany();
+  if (!showcase) {
+    // Local fixtures and integration tests can reset their SQLite database.
+    await client.webhookEndpoint.deleteMany();
+    await client.savedReport.deleteMany();
+    await client.playbookRun.deleteMany();
+    await client.playbook.deleteMany();
+    await client.auditLog.deleteMany();
+    await client.alertEvent.deleteMany();
+    await client.alertRule.deleteMany();
+    await client.funnelStat.deleteMany();
+    await client.order.deleteMany();
+    await client.customer.deleteMany();
+    await client.membership.deleteMany();
+    await client.workspace.deleteMany();
+    await client.user.deleteMany();
+  }
 
   // 1. Users
-  const ownerHash = await bcrypt.hash('PulseOwner2026!', 10);
+  const privatePassword = () => randomBytes(32).toString('base64url');
+  const ownerHash = await bcrypt.hash(showcase ? privatePassword() : 'PulseOwner2026!', 10);
   const analystHash = await bcrypt.hash('PulseView2026!', 10);
-  const adminHash = await bcrypt.hash('PulseAdmin2026!', 10);
+  const adminHash = await bcrypt.hash(showcase ? privatePassword() : 'PulseAdmin2026!', 10);
 
   const owner = await client.user.create({
     data: {
@@ -150,7 +167,7 @@ export async function seedDatabase(client: PrismaClient = prisma) {
   const opsMember = await client.user.create({
     data: {
       email: 'revops@pulseops.io',
-      passwordHash: analystHash,
+      passwordHash: showcase ? await bcrypt.hash(privatePassword(), 10) : analystHash,
       name: 'Rachel Rivera',
       avatarUrl: null,
     },
